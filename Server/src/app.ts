@@ -19,8 +19,5 @@ app.use(
 app.use(express.json());
 
 //Routes
-// app.use("/api/v1/auth", authRouter);
-// app.use("/api/v1/content", contentRouter);
-// app.use("/api/v1/brain", brainRouter);
 
 export {app};
