@@ -1,7 +1,9 @@
-import RideRequest from "../models/rideRequest.models";
+import { Document, Types } from "mongoose";
+import { Server } from "socket.io";
 import Pool from "../models/carpools.models";
-import {Server} from "socket.io";
-import {Document, Types} from "mongoose";
+import RideRequest from "../models/rideRequest.models";
+import logger from "../utils/logger";
+import { NotificationService } from "./notificationService";
 
 // ---------------------
 // Interfaces
@@ -33,6 +35,7 @@ let io: Server;
 
 export const setSocketIO = (ioInstance: Server) => {
     io = ioInstance;
+    NotificationService.setSocketIO(ioInstance);
 };
 
 // ---------------------
@@ -110,16 +113,32 @@ export const tryFormPool = async (newRequestId: string, maxUsers = 4): Promise<I
     // ---------------------
     // Real-time notifications via Socket.IO
     // ---------------------
-    groupRequests.forEach((r) => {
-        if (io) {
-            io.to(r.userId.toString()).emit("poolFormed", {
-                ...pool.toObject(),
-                _id: pool._id.toString(),
-                members: pool.members.map((id) => id.toString()),
-                rideRequests: pool.rideRequests.map((id) => id.toString()),
-            });
-        }
-    });
+    try {
+        // Populate pool with member details for notification
+        await pool.populate("members", "username email");
+        
+        const userIds = groupRequests.map(r => r.userId.toString());
+        const poolData = {
+            ...pool.toObject(),
+            _id: pool._id.toString(),
+            members: pool.members.map((member: any) => ({
+                _id: member._id.toString(),
+                username: member.username,
+                email: member.email
+            })),
+            rideRequests: pool.rideRequests.map((id) => id.toString()),
+        };
+
+        // Send notification using notification service
+        await NotificationService.notifyPoolFormed(userIds, poolData);
+        
+        logger.info(`Pool formed successfully with ${groupRequests.length} members`, {
+            poolId: pool._id.toString(),
+            memberCount: groupRequests.length
+        });
+    } catch (error) {
+        logger.error("Error sending pool formation notifications:", error);
+    }
 
     return pool;
 };

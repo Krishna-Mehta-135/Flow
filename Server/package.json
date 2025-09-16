@@ -6,7 +6,13 @@
   "scripts": {
     "build": "tsc -b",
     "start": "nodemon dist/index.js",
-    "dev": "npm run build && npm run start"
+    "dev": "npm run build && npm run start",
+    "prod": "npm run build && node dist/index.js",
+    "test": "echo \"No tests yet\" && exit 0",
+    "clean": "rm -rf dist",
+    "lint": "echo \"No linting configured yet\"",
+    "backup": "node -e \"require('./dist/utils/databaseBackup').DatabaseBackup.createBackup()\"",
+    "type-check": "tsc --noEmit"
   },
   "author": "",
   "license": "ISC",
@@ -19,10 +25,12 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.1",
     "socket.io": "^4.8.1",
     "typescript": "^5.9.2",
+    "winston": "^3.17.0",
     "zod": "^4.1.8"
   }
 }

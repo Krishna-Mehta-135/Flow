@@ -1,10 +1,28 @@
 import express from "express";
-import { checkRideStatus, createRideRequest } from "../controllers/rideRequest.controller";
+import {
+    cancelRideRequest,
+    checkRideStatus,
+    createRideRequest,
+    getUserRideRequests
+} from "../controllers/rideRequest.controller";
 import { protect } from "../middlewares/auth.middleware";
+import { rideRequestSchema, validateRequest } from "../middlewares/validation.middleware";
 
-const router = express.Router();
+const rideRequestRouter = express.Router();
 
-router.post("/", protect, createRideRequest);
-router.get("/:id/status", protect, checkRideStatus);
+// Protect all routes
+rideRequestRouter.use(protect);
 
-export default router;
+// Create new ride request
+rideRequestRouter.post("/", validateRequest(rideRequestSchema), createRideRequest);
+
+// Get user's ride requests
+rideRequestRouter.get("/", getUserRideRequests);
+
+// Get specific ride request status
+rideRequestRouter.get("/:id/status", checkRideStatus);
+
+// Cancel ride request
+rideRequestRouter.delete("/:id", cancelRideRequest);
+
+export default rideRequestRouter;
