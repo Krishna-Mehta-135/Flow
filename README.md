@@ -1,6 +1,6 @@
 # 🚗 Flow - AI-Powered Transportation Optimizer
 
-> **Winner Project at [Hackathon Name]** 🏆  
+ 
 > *Revolutionizing urban transportation through intelligent carpooling and AI-driven route optimization*
 
 [![React Native](https://img.shields.io/badge/React_Native-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactnative.dev/)
@@ -228,28 +228,6 @@ node test-apis.js  # Comprehensive API testing
 - **95% user satisfaction** in beta testing
 - **4.8/5 average rating** for carpool experiences  
 - **89% users** report using public transport more often
-
----
-
-## 🏆 **Hackathon Achievements**
-
-### **Technical Excellence**
-- ✅ **Full-stack implementation** in 24 hours
-- ✅ **3-team integration** (Backend + ML + LLM)
-- ✅ **Real-time features** with Socket.IO
-- ✅ **Production-ready** code architecture
-
-### **Innovation Points**
-- 🚀 **Novel ML integration** for transport prediction
-- 🤖 **LLM-powered** natural language route suggestions
-- ⚡ **Sub-second matching** algorithms
-- 🎯 **Seamless multi-modal** transportation
-
-### **Business Impact**
-- 💡 **Addresses real urban problems** affecting millions
-- 📈 **Scalable solution** for any city worldwide
-- 💰 **Clear monetization** through commission model
-- 🌟 **Social impact** through reduced pollution
 
 ---
 
