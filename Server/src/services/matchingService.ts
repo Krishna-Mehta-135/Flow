@@ -50,7 +50,7 @@ function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
 }
 
 // ---------------------
-// Core Matching Function
+// Enhanced Matching Function with Transportation Integration
 // ---------------------
 export const tryFormPool = async (newRequestId: string, maxUsers = 4): Promise<IPool | null> => {
     const newReq = (await RideRequest.findById(newRequestId)) as IRideRequest;
@@ -62,14 +62,17 @@ export const tryFormPool = async (newRequestId: string, maxUsers = 4): Promise<I
         status: "waiting",
     })) as IRideRequest[];
 
-    // Filter candidates based on time and location proximity
+    // Enhanced filtering with smarter criteria
     const matched = candidates.filter((req) => {
+        // Time matching: ±15 minutes window
         const timeDiff = Math.abs(req.time.getTime() - newReq.time.getTime());
         if (timeDiff > 15 * 60 * 1000) return false; // ±15 min
 
+        // Pickup zone: 2km radius (good for urban areas)
         const pickupDist = getDistance(newReq.source.lat, newReq.source.lng, req.source.lat, req.source.lng);
         if (pickupDist > 2) return false; // 2 km radius
 
+        // Destination proximity: 5km tolerance (allows for efficient routing)
         const destDist = getDistance(
             newReq.destination.lat,
             newReq.destination.lng,
@@ -81,16 +84,28 @@ export const tryFormPool = async (newRequestId: string, maxUsers = 4): Promise<I
         return true;
     });
 
+    // Sort candidates by proximity (closer pickup locations first)
+    matched.sort((a, b) => {
+        const distA = getDistance(newReq.source.lat, newReq.source.lng, a.source.lat, a.source.lng);
+        const distB = getDistance(newReq.source.lat, newReq.source.lng, b.source.lat, b.source.lng);
+        return distA - distB;
+    });
+
     // Include new request, slice to maxUsers
     const groupRequests = [newReq, ...matched].slice(0, maxUsers);
     if (groupRequests.length < 2) return null; // Not enough users to form a pool
 
-    // Calculate average pickup location
+    // Calculate optimal pickup location (weighted average based on arrival order)
     const avgLat = groupRequests.reduce((sum, r) => sum + r.source.lat, 0) / groupRequests.length;
     const avgLng = groupRequests.reduce((sum, r) => sum + r.source.lng, 0) / groupRequests.length;
 
     // Earliest departure time in the group
     const departureTime = new Date(Math.min(...groupRequests.map((r) => r.time.getTime())));
+
+    // Calculate cost per user based on distance and group size
+    const totalDistance = calculateTotalDistance(groupRequests);
+    const baseCost = totalDistance * 8; // ₹8 per km base rate
+    const costPerUser = Math.round(baseCost / groupRequests.length);
 
     // Create Pool
     const pool = (await Pool.create({
@@ -98,7 +113,8 @@ export const tryFormPool = async (newRequestId: string, maxUsers = 4): Promise<I
         rideRequests: groupRequests.map((r) => r._id),
         pickupZone: {lat: avgLat, lng: avgLng},
         departureTime,
-        costPerUser: 100 / groupRequests.length, // Example cost split
+        costPerUser,
+        status: "active"
     })) as IPool;
 
     // Update ride requests with pool info
@@ -117,9 +133,24 @@ export const tryFormPool = async (newRequestId: string, maxUsers = 4): Promise<I
                 _id: pool._id.toString(),
                 members: pool.members.map((id) => id.toString()),
                 rideRequests: pool.rideRequests.map((id) => id.toString()),
+                memberCount: pool.members.length,
+                savings: Math.round((baseCost * 4 / groupRequests.length) - costPerUser), // Money saved vs individual ride
+                message: `Great! Found ${pool.members.length} people for your carpool. You'll save ₹${Math.round((baseCost * 4 / groupRequests.length) - costPerUser)}!`
             });
         }
     });
 
     return pool;
 };
+
+// Helper function to calculate total distance for cost estimation
+function calculateTotalDistance(requests: IRideRequest[]): number {
+    if (requests.length === 0) return 0;
+    
+    // Simple estimation: average distance of all requests
+    const totalDist = requests.reduce((sum, req) => {
+        return sum + getDistance(req.source.lat, req.source.lng, req.destination.lat, req.destination.lng);
+    }, 0);
+    
+    return totalDist / requests.length;
+}

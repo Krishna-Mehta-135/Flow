@@ -6,6 +6,7 @@ import express from "express";
 import { authRouter } from "./routers/auth.routes";
 import { carpoolRouter } from "./routers/carpool.routes";
 import rideRequestRouter from "./routers/rideRequest.routes";
+import { transportationRouter } from "./routers/transportation.routes";
 
 const app = express();
 
@@ -25,5 +26,6 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/ride-requests", rideRequestRouter);
 app.use("/api/pools", carpoolRouter);
+app.use("/api/transportation", transportationRouter);
 
 export { app };
