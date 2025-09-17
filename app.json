@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ProjectZ",
-    "slug": "ProjectZ",
+    "name": "Flow",
+    "slug": "flow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "projectz",
+    "scheme": "flow",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

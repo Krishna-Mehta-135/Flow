@@ -1,1 +1,0 @@
-// Route analytics model for tracking popular routes
