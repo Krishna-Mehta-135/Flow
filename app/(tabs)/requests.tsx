@@ -1,4 +1,4 @@
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Ionicons } from '@expo/vector-icons';
 import carpoolService, { RideRequest } from '@/services/carpoolService';
 import React, { useEffect, useState } from 'react';
 import {
@@ -88,15 +88,15 @@ export default function RequestsScreen() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'clock';
+        return 'time';
       case 'matched':
-        return 'checkmark.circle.fill';
+        return 'checkmark-circle';
       case 'completed':
-        return 'flag.checkered';
+        return 'flag';
       case 'cancelled':
-        return 'x.circle.fill';
+        return 'close-circle';
       default:
-        return 'questionmark.circle';
+        return 'help-circle';
     }
   };
 
@@ -104,7 +104,7 @@ export default function RequestsScreen() {
     <View style={styles.requestCard}>
       <View style={styles.requestHeader}>
         <View style={styles.statusContainer}>
-          <IconSymbol 
+          <Ionicons 
             name={getStatusIcon(item.status)} 
             size={16} 
             color={getStatusColor(item.status)} 
@@ -118,14 +118,14 @@ export default function RequestsScreen() {
 
       <View style={styles.locationContainer}>
         <View style={styles.locationRow}>
-          <IconSymbol name="circle.fill" size={12} color="#34C759" />
+          <Ionicons name="ellipse" size={12} color="#34C759" />
           <Text style={styles.locationText}>
             {item.startLocation.address || `${item.startLocation.latitude}, ${item.startLocation.longitude}`}
           </Text>
         </View>
         <View style={styles.routeLine} />
         <View style={styles.locationRow}>
-          <IconSymbol name="circle.fill" size={12} color="#FF3B30" />
+          <Ionicons name="ellipse" size={12} color="#FF3B30" />
           <Text style={styles.locationText}>
             {item.endLocation.address || `${item.endLocation.latitude}, ${item.endLocation.longitude}`}
           </Text>
@@ -134,12 +134,12 @@ export default function RequestsScreen() {
 
       <View style={styles.requestDetails}>
         <View style={styles.detailRow}>
-          <IconSymbol name="clock" size={16} color="#666" />
+          <Ionicons name="time" size={16} color="#666" />
           <Text style={styles.detailText}>Requested for: {formatDate(item.requestedTime)}</Text>
         </View>
         {item.carpoolId && (
           <View style={styles.detailRow}>
-            <IconSymbol name="car.fill" size={16} color="#666" />
+            <Ionicons name="car" size={16} color="#666" />
             <Text style={styles.detailText}>Matched to carpool</Text>
           </View>
         )}
@@ -156,7 +156,7 @@ export default function RequestsScreen() {
 
       {item.status === 'matched' && (
         <View style={styles.matchedInfo}>
-          <IconSymbol name="checkmark.circle.fill" size={20} color="#34C759" />
+          <Ionicons name="checkmark-circle" size={20} color="#34C759" />
           <Text style={styles.matchedText}>Your ride has been matched!</Text>
         </View>
       )}
@@ -181,7 +181,7 @@ export default function RequestsScreen() {
 
       {requests.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <IconSymbol name="hand.raised" size={64} color="#ccc" />
+          <Ionicons name="hand-right" size={64} color="#ccc" />
           <Text style={styles.emptyText}>No ride requests</Text>
           <Text style={styles.emptySubtext}>
             Start by requesting a ride!

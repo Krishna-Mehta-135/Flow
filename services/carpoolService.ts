@@ -41,9 +41,17 @@ export interface RideRequest {
 }
 
 export interface CreateRideRequestData {
-  startLocation: Location;
-  endLocation: Location;
-  requestedTime: string;
+  source: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
+  destination: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
+  time: string; // ISO string that will be converted to Date on backend
 }
 
 class CarpoolService {

@@ -15,8 +15,10 @@ app.use(
     cors({
         origin: [
             "http://localhost:5173",
-            "http://10.6.206.161:8081",
-            "exp://10.6.206.161:8081"
+            "http://10.6.192.157:8081",
+            "http://10.6.192.157:8082",
+            "exp://10.6.192.157:8081",
+            "exp://10.6.192.157:8082"
         ],
         credentials: true, // ✅ required to allow cookies or Authorization headers
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],

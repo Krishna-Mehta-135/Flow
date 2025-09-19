@@ -1,56 +1,140 @@
+import { FlowColors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SystemUI from 'expo-system-ui';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
 
-// Custom theme colors
-const customLightTheme = {
+// Flow Custom Light Theme
+const flowLightTheme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: '#6200EE',
-    primaryContainer: '#BB86FC',
-    secondary: '#03DAC6',
-    secondaryContainer: '#018786',
-    tertiary: '#FF6B6B',
-    surface: '#FFFFFF',
-    surfaceVariant: '#F5F5F5',
-    background: '#FAFAFA',
-    error: '#B00020',
-    onPrimary: '#FFFFFF',
-    onSecondary: '#000000',
-    onSurface: '#000000',
-    onBackground: '#000000',
-    outline: '#79747E',
+    primary: FlowColors.primary,
+    primaryContainer: '#dbeafe',
+    secondary: FlowColors.secondary,
+    secondaryContainer: '#e2e8f0',
+    tertiary: '#10b981',
+    surface: '#ffffff',
+    surfaceVariant: '#f8fafc',
+    background: '#ffffff',
+    error: '#ef4444',
+    errorContainer: '#fef2f2',
+    onPrimary: '#ffffff',
+    onPrimaryContainer: '#1e3a8a',
+    onSecondary: '#ffffff',
+    onSecondaryContainer: '#1e293b',
+    onSurface: '#111c22',
+    onSurfaceVariant: '#6b7280',
+    onBackground: '#111c22',
+    outline: '#d1d5db',
+    outlineVariant: '#e5e7eb',
+    shadow: '#000000',
+    scrim: '#000000',
+    inverseSurface: '#374151',
+    inverseOnSurface: '#f9fafb',
+    inversePrimary: '#60a5fa',
+  },
+  fonts: {
+    ...MD3LightTheme.fonts,
+    default: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '400' as const,
+    },
+    headlineLarge: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '700' as const,
+      fontSize: 32,
+      lineHeight: 40,
+    },
+    headlineMedium: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '700' as const,
+      fontSize: 28,
+      lineHeight: 36,
+    },
+    titleLarge: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '500' as const,
+      fontSize: 22,
+      lineHeight: 28,
+    },
+    bodyLarge: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '400' as const,
+      fontSize: 16,
+      lineHeight: 24,
+    },
   },
 };
 
-const customDarkTheme = {
+// Flow Custom Dark Theme (Primary theme based on HTML design)
+const flowDarkTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: '#BB86FC',
-    primaryContainer: '#3700B3',
-    secondary: '#03DAC6',
-    secondaryContainer: '#018786',
-    tertiary: '#FF6B6B',
-    surface: '#121212',
-    surfaceVariant: '#1E1E1E',
-    background: '#000000',
-    error: '#CF6679',
-    onPrimary: '#000000',
-    onSecondary: '#000000',
-    onSurface: '#FFFFFF',
-    onBackground: '#FFFFFF',
-    outline: '#938F99',
+    primary: FlowColors.primary,
+    primaryContainer: '#1e40af',
+    secondary: FlowColors.secondary,
+    secondaryContainer: '#475569',
+    tertiary: '#34d399',
+    surface: '#374151',
+    surfaceVariant: '#4b5563',
+    background: FlowColors.backgroundDark,
+    error: '#f87171',
+    errorContainer: '#991b1b',
+    onPrimary: '#ffffff',
+    onPrimaryContainer: '#dbeafe',
+    onSecondary: '#ffffff',
+    onSecondaryContainer: '#e2e8f0',
+    onSurface: '#ffffff',
+    onSurfaceVariant: '#d1d5db',
+    onBackground: '#ffffff',
+    outline: '#6b7280',
+    outlineVariant: '#374151',
+    shadow: '#000000',
+    scrim: '#000000',
+    inverseSurface: '#f9fafb',
+    inverseOnSurface: '#111827',
+    inversePrimary: '#1e40af',
+  },
+  fonts: {
+    ...MD3DarkTheme.fonts,
+    default: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '400' as const,
+    },
+    headlineLarge: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '700' as const,
+      fontSize: 32,
+      lineHeight: 40,
+    },
+    headlineMedium: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '700' as const,
+      fontSize: 28,
+      lineHeight: 36,
+    },
+    titleLarge: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '500' as const,
+      fontSize: 22,
+      lineHeight: 28,
+    },
+    bodyLarge: {
+      fontFamily: 'SpaceMono',
+      fontWeight: '400' as const,
+      fontSize: 16,
+      lineHeight: 24,
+    },
   },
 };
 
 interface ThemeContextType {
   isDarkMode: boolean;
   toggleTheme: () => void;
-  theme: typeof customLightTheme;
+  theme: typeof flowDarkTheme;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -69,17 +153,15 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const systemColorScheme = useColorScheme();
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(systemColorScheme === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(true); // Default to dark mode for Flow
 
   useEffect(() => {
     loadThemePreference();
   }, []);
 
   useEffect(() => {
-    // Update system UI to match theme
-    SystemUI.setBackgroundColorAsync(
-      isDarkMode ? customDarkTheme.colors.background : customLightTheme.colors.background
-    );
+    // Update system UI to match theme - always use Flow's dark background
+    SystemUI.setBackgroundColorAsync(FlowColors.backgroundDark);
   }, [isDarkMode]);
 
   const loadThemePreference = async () => {
@@ -87,6 +169,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       const savedTheme = await AsyncStorage.getItem('themePreference');
       if (savedTheme !== null) {
         setIsDarkMode(savedTheme === 'dark');
+      } else {
+        // Default to dark mode for Flow app
+        setIsDarkMode(true);
       }
     } catch (error) {
       console.error('Error loading theme preference:', error);
@@ -103,7 +188,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     }
   };
 
-  const theme = isDarkMode ? customDarkTheme : customLightTheme;
+  const theme = isDarkMode ? flowDarkTheme : flowLightTheme;
 
   const value: ThemeContextType = {
     isDarkMode,

@@ -2,9 +2,9 @@ import { router, Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 
 import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -59,9 +59,9 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol 
+            <Ionicons 
               size={focused ? 30 : 28} 
-              name={focused ? "house.fill" : "house"} 
+              name={focused ? "home" : "home-outline"} 
               color={color} 
             />
           ),
@@ -72,9 +72,9 @@ export default function TabLayout() {
         options={{
           title: 'Carpools',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol 
+            <Ionicons 
               size={focused ? 30 : 28} 
-              name={focused ? "car.fill" : "car"} 
+              name={focused ? "car" : "car-outline"} 
               color={color} 
             />
           ),
@@ -85,9 +85,9 @@ export default function TabLayout() {
         options={{
           title: 'Requests',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol 
+            <Ionicons 
               size={focused ? 30 : 28} 
-              name={focused ? "hand.raised.fill" : "hand.raised"} 
+              name={focused ? "list" : "list-outline"} 
               color={color} 
             />
           ),
@@ -98,9 +98,9 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol 
+            <Ionicons 
               size={focused ? 30 : 28} 
-              name={focused ? "person.fill" : "person"} 
+              name={focused ? "person" : "person-outline"} 
               color={color} 
             />
           ),

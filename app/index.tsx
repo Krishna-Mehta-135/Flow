@@ -1,11 +1,11 @@
 import { FlowColors } from '@/constants/Colors';
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function CreateCarpoolScreen() {
+export default function Index() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Carpool</Text>
-      <Text style={styles.subtitle}>Coming Soon...</Text>
+      <Text style={styles.text}>Flow App is Working! 🚗</Text>
+      <Text style={styles.subtext}>If you see this, the app is running correctly</Text>
     </View>
   );
 }
@@ -18,14 +18,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  title: {
+  text: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 8,
+    textAlign: 'center',
+    marginBottom: 16,
   },
-  subtitle: {
+  subtext: {
     fontSize: 16,
     color: '#9ca3af',
+    textAlign: 'center',
   },
 });
