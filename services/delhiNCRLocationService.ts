@@ -48,6 +48,16 @@ const DELHI_NCR_LOCATIONS: DelhiNCRLocation[] = [
   { name: 'Khan Market', area: 'Khan Market', city: 'New Delhi', state: 'Delhi', coordinates: { latitude: 28.5986, longitude: 77.2297 }, type: 'landmark' },
   { name: 'Dilli Haat', area: 'INA', city: 'New Delhi', state: 'Delhi', coordinates: { latitude: 28.5741, longitude: 77.2070 }, type: 'landmark' },
   
+  // Tech Hubs & Business Areas
+  { name: 'Noida Sector 16', area: 'Sector 16', city: 'Noida', state: 'Uttar Pradesh', coordinates: { latitude: 28.5833, longitude: 77.3167 }, type: 'residential' },
+  { name: 'Golf Course Road', area: 'Golf Course Road', city: 'Gurugram', state: 'Haryana', coordinates: { latitude: 28.4707, longitude: 77.0743 }, type: 'residential' },
+  { name: 'Nehru Place', area: 'Nehru Place', city: 'New Delhi', state: 'Delhi', coordinates: { latitude: 28.5494, longitude: 77.2506 }, type: 'landmark' },
+  { name: 'Rajouri Garden', area: 'Rajouri Garden', city: 'New Delhi', state: 'Delhi', coordinates: { latitude: 28.6469, longitude: 77.1202 }, type: 'residential' },
+  { name: 'Vasant Kunj', area: 'Vasant Kunj', city: 'New Delhi', state: 'Delhi', coordinates: { latitude: 28.5200, longitude: 77.1588 }, type: 'residential' },
+  { name: 'Greater Kailash', area: 'GK-1', city: 'New Delhi', state: 'Delhi', coordinates: { latitude: 28.5494, longitude: 77.2347 }, type: 'residential' },
+  { name: 'Faridabad Sector 21', area: 'Sector 21', city: 'Faridabad', state: 'Haryana', coordinates: { latitude: 28.4089, longitude: 77.3178 }, type: 'residential' },
+  { name: 'Ghaziabad Railway Station', area: 'Railway Road', city: 'Ghaziabad', state: 'Uttar Pradesh', coordinates: { latitude: 28.6692, longitude: 77.4538 }, type: 'landmark' },
+  
   // Tech Parks & Business Areas
   { name: 'Unitech Cyber Park', area: 'Sector 39', city: 'Gurugram', state: 'Haryana', coordinates: { latitude: 28.4329, longitude: 77.0671 }, type: 'residential' },
   { name: 'Logix City Centre', area: 'Sector 32', city: 'Noida', state: 'Uttar Pradesh', coordinates: { latitude: 28.5736, longitude: 77.3589 }, type: 'mall' },

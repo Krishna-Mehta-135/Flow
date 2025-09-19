@@ -1,25 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-  RefreshControl,
-  Dimensions,
-  StatusBar,
-  Modal,
-} from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import * as Location from 'expo-location';
-import authService from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import authService from '@/services/authService';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+    Alert,
+    Dimensions,
+    FlatList,
+    Modal,
+    RefreshControl,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const { width } = Dimensions.get('window');
 
@@ -424,7 +424,23 @@ export default function CarpoolsScreen() {
       {/* Header */}
       <SafeAreaView style={styles.header}>
         <BlurView intensity={80} style={styles.headerContent}>
-          <Text style={styles.title}>My Carpools</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>My Carpools</Text>
+            
+            {/* Live Map Button */}
+            <TouchableOpacity 
+              style={styles.liveMapButton}
+              onPress={() => router.push('/live-carpool-map')}
+            >
+              <LinearGradient
+                colors={['#10b981', '#059669']}
+                style={styles.liveMapGradient}
+              >
+                <Ionicons name="map" size={18} color="white" />
+                <Text style={styles.liveMapText}>Live Map</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
           
           {/* Tab Switcher */}
           <View style={styles.tabContainer}>
@@ -902,6 +918,29 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 14,
     color: '#92b7c9',
+    fontFamily: 'Space Grotesk',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  liveMapButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  liveMapGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  liveMapText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
     fontFamily: 'Space Grotesk',
   },
 });

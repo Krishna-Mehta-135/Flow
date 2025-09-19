@@ -1,13 +1,11 @@
 import { FlowColors } from '@/constants/Colors';
 import React from 'react';
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    TouchableOpacityProps,
-    ViewStyle,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableOpacityProps
 } from 'react-native';
 
 interface FlowButtonProps extends TouchableOpacityProps {

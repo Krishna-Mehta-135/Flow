@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  Modal,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
+import delhiNCRLocationService, { DelhiNCRLocation } from '@/services/delhiNCRLocationService';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Location from 'expo-location';
-import delhiNCRLocationService, { DelhiNCRLocation } from '@/services/delhiNCRLocationService';
+import { useEffect, useState } from 'react';
+import {
+    FlatList,
+    Modal,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
 interface LocationData {
   latitude: number;

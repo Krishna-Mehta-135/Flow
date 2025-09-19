@@ -1,28 +1,56 @@
 import { Request, Response } from "express";
-import Transportation from "../models/transportation.models";
 import RideRequest from "../models/rideRequest.models";
+import Transportation from "../models/transportation.models";
+import { tryFormPool } from "../services/matchingService";
 import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/asyncHandler";
-import { tryFormPool } from "../services/matchingService";
+
+// ML API Response interface
+interface MLServiceResponse {
+    options: Array<{
+        type: string;
+        estimatedCost: number;
+        estimatedTime: number;
+        estimatedDistance: number;
+        trafficLevel: string;
+        confidence: number;
+        mlPrediction?: any;
+    }>;
+}
 
 /**
  * Get transportation options for a route
  * This will call your teammates' ML services
  */
 export const getTransportationOptions = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-    const { source, destination, requestedTime } = req.body;
+    const { source, destination, requestedTime, passengerCount = 1 } = req.body;
 
+    // Get user ID from auth middleware
+    const userId = (req as any).user?.id;
     if (!userId) {
         return res.status(401).json(new ApiResponse(401, null, "Unauthorized"));
+    }
+
+    // Parse and validate the requested time
+    let parsedTime: Date;
+    try {
+        // Handle both ISO string and timestamp formats
+        parsedTime = new Date(requestedTime);
+        if (isNaN(parsedTime.getTime())) {
+            throw new Error("Invalid date format");
+        }
+    } catch (error) {
+        console.error("Date parsing error:", error, "Original value:", requestedTime);
+        // Default to current time if parsing fails
+        parsedTime = new Date();
     }
 
     // Prepare data for teammate's ML model
     const routeData = {
         route_key: `${source.address}_${destination.address}`,
-        hour_of_day: new Date(requestedTime).getHours(),
-        day_of_week: new Date(requestedTime).getDay(),
-        is_weekend: [0, 6].includes(new Date(requestedTime).getDay()) ? 1 : 0,
+        hour_of_day: parsedTime.getHours(),
+        day_of_week: parsedTime.getDay(),
+        is_weekend: [0, 6].includes(parsedTime.getDay()) ? 1 : 0,
         distance_km: calculateDistance(source.lat, source.lng, destination.lat, destination.lng),
         origin_zone: source.zone || "Unknown",
         destination_zone: destination.zone || "Unknown",
@@ -30,7 +58,7 @@ export const getTransportationOptions = asyncHandler(async (req: Request, res: R
     };
 
     try {
-        // TODO: Call teammate 1's ML service
+        // Call teammate 1's ML service
         const mlResponse = await callRouteMLService(routeData);
         
         // Create transportation request
@@ -38,13 +66,35 @@ export const getTransportationOptions = asyncHandler(async (req: Request, res: R
             userId,
             source,
             destination,
-            requestedTime: new Date(requestedTime),
-            transportOptions: mlResponse.options || getDefaultOptions(routeData),
+            requestedTime: parsedTime,
+            transportOptions: mlResponse.options, // Use the options array from ML response
             status: "pending"
         });
 
+        // Format response to match frontend expectations
+        const response = {
+            requestId: transportRequest._id.toString(),
+            options: mlResponse.options.map((option: any, index: number) => ({
+                id: `${transportRequest._id}_${index}`,
+                type: option.type,
+                estimatedCost: option.estimatedCost,
+                estimatedTime: option.estimatedTime,
+                estimatedDistance: option.estimatedDistance,
+                confidence: option.confidence || 0.8,
+                trafficLevel: option.trafficLevel,
+                description: getOptionDescription(option),
+                icon: getOptionIcon(option.type),
+                mlInsights: option.mlPrediction ? {
+                    prediction: `Traffic prediction: ${option.trafficLevel}`,
+                    factors: ['Historical data', 'Current conditions', 'Time of day']
+                } : undefined
+            })),
+            mlRecommendation: generateMLRecommendation(mlResponse.options),
+            estimatedSavings: calculateSavings(mlResponse.options)
+        };
+
         return res.status(200).json(
-            new ApiResponse(200, transportRequest, "Transportation options fetched successfully")
+            new ApiResponse(200, response, "Transportation options fetched successfully")
         );
     } catch (error) {
         console.error("Error getting transportation options:", error);
@@ -55,13 +105,35 @@ export const getTransportationOptions = asyncHandler(async (req: Request, res: R
             userId,
             source,
             destination,
-            requestedTime: new Date(requestedTime),
-            transportOptions: fallbackOptions,
+            requestedTime: parsedTime,
+            transportOptions: fallbackOptions.options,
             status: "pending"
         });
 
+        // Format response to match frontend expectations
+        const response = {
+            requestId: transportRequest._id.toString(),
+            options: fallbackOptions.options.map((option: any, index: number) => ({
+                id: `${transportRequest._id}_${index}`,
+                type: option.type,
+                estimatedCost: option.estimatedCost,
+                estimatedTime: option.estimatedTime,
+                estimatedDistance: option.estimatedDistance,
+                confidence: option.confidence || 0.8,
+                trafficLevel: option.trafficLevel,
+                description: getOptionDescription(option),
+                icon: getOptionIcon(option.type),
+                mlInsights: {
+                    prediction: `Traffic prediction: ${option.trafficLevel} (fallback)`,
+                    factors: ['Default estimation', 'Historical patterns']
+                }
+            })),
+            mlRecommendation: generateMLRecommendation(fallbackOptions.options),
+            estimatedSavings: calculateSavings(fallbackOptions.options)
+        };
+
         return res.status(200).json(
-            new ApiResponse(200, transportRequest, "Transportation options fetched (fallback)")
+            new ApiResponse(200, response, "Transportation options fetched (fallback)")
         );
     }
 });
@@ -282,37 +354,102 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
     return R * c;
 }
 
-async function callRouteMLService(routeData: any) {
-    // TODO: Replace with actual API call to teammate 1's service
-    // For now, return mock data
-    return {
-        options: [
-            {
-                type: "carpool",
-                estimatedCost: 150,
-                estimatedTime: 45,
-                estimatedDistance: routeData.distance_km,
-                trafficLevel: "medium",
-                confidence: 0.85
-            },
-            {
-                type: "metro",
-                estimatedCost: 60,
-                estimatedTime: 55,
-                estimatedDistance: routeData.distance_km * 1.2,
-                trafficLevel: "low",
-                confidence: 0.95
-            },
-            {
-                type: "taxi",
-                estimatedCost: 400,
-                estimatedTime: 40,
-                estimatedDistance: routeData.distance_km,
-                trafficLevel: "medium",
-                confidence: 0.80
-            }
-        ]
+async function callRouteMLService(routeData: any): Promise<MLServiceResponse> {
+    const url = "https://traffic-api-latest.onrender.com/predict";
+    
+    // Prepare the data for the ML API (match the expected format)
+    const mlRequestData = {
+        route_key: routeData.route_key,
+        hour_of_day: routeData.hour_of_day,
+        day_of_week: routeData.day_of_week,
+        is_weekend: routeData.is_weekend,
+        is_holiday: 0, // Default to not holiday
+        time_bin: getTimeBin(routeData.hour_of_day),
+        duration_traffic: routeData.distance_km * 3, // Estimated base duration
+        congestion_ratio: 0.5, // Default medium congestion
+        lag_duration_t_1: routeData.distance_km * 3.2,
+        lag_duration_t_2: routeData.distance_km * 3.5,
+        rolling_avg_duration_last_3: routeData.distance_km * 3.1,
+        last_jam_state: 0,
+        neighbor_avg_duration: routeData.distance_km * 3,
+        road_type: "arterial", // Default road type
+        lanes: 4, // Default lanes
+        distance_km: routeData.distance_km,
+        rain_mm: 0, // Default no rain
+        temperature: 25, // Default temperature
+        visibility_km: 10, // Default visibility
+        pressure: 1013.25, // Default pressure
+        wind_speed: 5, // Default wind speed
+        humidity: 60, // Default humidity
+        rain_x_hour: 0,
+        dist_x_weekend: routeData.is_weekend * routeData.distance_km,
+        origin_zone: routeData.origin_zone,
+        destination_zone: routeData.destination_zone,
+        is_commute_corridor: 1, // Assume it's a commute route
+        rolling_15min: routeData.distance_km * 3,
+        rolling_1hr: routeData.distance_km * 6,
+        event_flag: 0,
+        metro_strike_flag: 0
     };
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mlRequestData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`ML API error: ${response.status}`);
+        }
+        
+        const mlResponse = await response.json();
+        console.log("ML API Response:", mlResponse);
+        
+        // Convert ML response to our expected format
+        // prediction: 0 = low traffic, 1 = high traffic
+        const hasTraffic = mlResponse.prediction === 1;
+        const trafficConfidence = Math.max(...mlResponse.probabilities);
+        
+        // Adjust duration based on traffic prediction
+        const baseDuration = routeData.distance_km * 3; // 3 minutes per km base
+        const predictedDuration = hasTraffic ? baseDuration * 1.5 : baseDuration; // 50% longer if traffic
+        const baseCost = routeData.distance_km * 10;
+        
+        return {
+            options: [
+                {
+                    type: "carpool",
+                    estimatedCost: Math.round(baseCost * 0.4),
+                    estimatedTime: Math.round(predictedDuration),
+                    estimatedDistance: Math.round(routeData.distance_km * 10) / 10, // Round to 1 decimal
+                    trafficLevel: hasTraffic ? "high" : "low",
+                    confidence: trafficConfidence,
+                    mlPrediction: mlResponse
+                },
+                {
+                    type: "metro",
+                    estimatedCost: Math.round(Math.min(60, baseCost * 0.2)),
+                    estimatedTime: Math.round(baseDuration * 1.3), // Metro not affected by road traffic
+                    estimatedDistance: Math.round(routeData.distance_km * 1.2 * 10) / 10, // Round to 1 decimal
+                    trafficLevel: "low",
+                    confidence: 0.95
+                },
+                {
+                    type: "taxi",
+                    estimatedCost: Math.round(baseCost),
+                    estimatedTime: Math.round(predictedDuration * 0.9), // Slightly faster than carpool
+                    estimatedDistance: Math.round(routeData.distance_km * 10) / 10, // Round to 1 decimal
+                    trafficLevel: hasTraffic ? "high" : "medium",
+                    confidence: trafficConfidence
+                }
+            ]
+        };
+    } catch (error) {
+        console.error("Error calling ML API:", error);
+        // Fallback to default options if ML service fails
+        return getDefaultOptions(routeData);
+    }
 }
 
 async function callRouteSwitchingService(data: any) {
@@ -325,34 +462,100 @@ async function callRouteSwitchingService(data: any) {
     };
 }
 
-function getDefaultOptions(routeData: any) {
+function getDefaultOptions(routeData: any): MLServiceResponse {
     const baseCost = routeData.distance_km * 10;
     const baseTime = routeData.distance_km * 3;
     
-    return [
-        {
-            type: "carpool",
-            estimatedCost: baseCost * 0.4,
-            estimatedTime: baseTime,
-            estimatedDistance: routeData.distance_km,
-            trafficLevel: "medium",
-            confidence: 0.7
-        },
-        {
-            type: "metro",
-            estimatedCost: Math.min(60, baseCost * 0.2),
-            estimatedTime: baseTime * 1.3,
-            estimatedDistance: routeData.distance_km * 1.2,
-            trafficLevel: "low",
-            confidence: 0.9
-        },
-        {
-            type: "taxi",
-            estimatedCost: baseCost,
-            estimatedTime: baseTime * 0.8,
-            estimatedDistance: routeData.distance_km,
-            trafficLevel: "medium",
-            confidence: 0.8
-        }
-    ];
+    return {
+        options: [
+            {
+                type: "carpool",
+                estimatedCost: Math.round(baseCost * 0.4),
+                estimatedTime: Math.round(baseTime),
+                estimatedDistance: Math.round(routeData.distance_km * 10) / 10, // Round to 1 decimal
+                trafficLevel: "medium",
+                confidence: 0.7
+            },
+            {
+                type: "metro",
+                estimatedCost: Math.round(Math.min(60, baseCost * 0.2)),
+                estimatedTime: Math.round(baseTime * 1.3),
+                estimatedDistance: Math.round(routeData.distance_km * 1.2 * 10) / 10, // Round to 1 decimal
+                trafficLevel: "low",
+                confidence: 0.9
+            },
+            {
+                type: "taxi",
+                estimatedCost: Math.round(baseCost),
+                estimatedTime: Math.round(baseTime * 0.8),
+                estimatedDistance: Math.round(routeData.distance_km * 10) / 10, // Round to 1 decimal
+                trafficLevel: "medium",
+                confidence: 0.8
+            }
+        ]
+    };
+}
+
+// Helper function to determine time bin based on hour
+function getTimeBin(hour: number): string {
+    if (hour >= 6 && hour < 10) return "morning_peak";
+    if (hour >= 10 && hour < 16) return "midday";
+    if (hour >= 16 && hour < 20) return "evening_peak";
+    if (hour >= 20 && hour < 23) return "evening";
+    return "late_night";
+}
+
+// Helper functions for response formatting
+function getOptionDescription(option: any): string {
+    switch (option.type) {
+        case 'carpool':
+            return `Share a ride with others. ${option.trafficLevel === 'high' ? 'Traffic expected' : 'Good conditions'}`;
+        case 'metro':
+            return 'Fast and reliable metro service';
+        case 'taxi':
+            return `Private taxi ride. ${option.trafficLevel === 'high' ? 'May face traffic delays' : 'Quick and convenient'}`;
+        case 'bus':
+            return 'Affordable public bus service';
+        case 'auto':
+            return 'Quick auto-rickshaw ride';
+        default:
+            return 'Transportation option';
+    }
+}
+
+function getOptionIcon(type: string): string {
+    switch (type) {
+        case 'carpool': return 'car';
+        case 'metro': return 'train';
+        case 'taxi': return 'car-sport';
+        case 'bus': return 'bus';
+        case 'auto': return 'car';
+        case 'walking': return 'walk';
+        default: return 'car';
+    }
+}
+
+function generateMLRecommendation(options: any[]): string {
+    const bestOption = options.reduce((best, current) => {
+        const bestScore = (best.confidence || 0.5) * (best.trafficLevel === 'low' ? 1.2 : best.trafficLevel === 'medium' ? 1.0 : 0.8);
+        const currentScore = (current.confidence || 0.5) * (current.trafficLevel === 'low' ? 1.2 : current.trafficLevel === 'medium' ? 1.0 : 0.8);
+        return currentScore > bestScore ? current : best;
+    });
+
+    return `Based on current traffic conditions, we recommend ${bestOption.type}. Expected ${bestOption.trafficLevel} traffic with ${Math.round((bestOption.confidence || 0.8) * 100)}% confidence.`;
+}
+
+function calculateSavings(options: any[]): { cost: number; time: number; co2: number } {
+    const carpoolOption = options.find(opt => opt.type === 'carpool');
+    const taxiOption = options.find(opt => opt.type === 'taxi');
+    
+    if (!carpoolOption || !taxiOption) {
+        return { cost: 0, time: 0, co2: 0 };
+    }
+
+    return {
+        cost: Math.max(0, taxiOption.estimatedCost - carpoolOption.estimatedCost),
+        time: Math.max(0, taxiOption.estimatedTime - carpoolOption.estimatedTime),
+        co2: Math.round(Math.random() * 50 + 20) // Mock CO2 savings
+    };
 }

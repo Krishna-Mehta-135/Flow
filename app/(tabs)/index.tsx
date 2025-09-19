@@ -1,22 +1,22 @@
-import { Ionicons } from '@expo/vector-icons';
-import { FlowColors } from '@/constants/Colors';
-import { useAuth } from '@/contexts/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import FlowIcon from '@/components/ui/FlowIcon';
 import GradientCard from '@/components/ui/GradientCard';
 import StatusIndicator from '@/components/ui/StatusIndicator';
+import { FlowColors } from '@/constants/Colors';
+import { useAuth } from '@/contexts/AuthContext';
 import healthService from '@/services/healthService';
-import {
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import {
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -35,19 +35,19 @@ export default function HomeScreen() {
   const quickActions = [
     {
       id: '1',
-      title: 'Create Carpool',
-      subtitle: 'Offer a ride to others',
-      icon: 'car' as const,
-      color: FlowColors.primary,
-      route: '/create-carpool',
+      title: '� Future Traffic',
+      subtitle: 'When should I leave?',
+      icon: 'time' as const,
+      color: '#f59e0b',
+      route: '/traffic-predictor',
     },
     {
       id: '2',
-      title: 'Find Ride',
-      subtitle: 'Join an existing carpool',
-      icon: 'search' as const,
-      color: '#10b981',
-      route: '/(tabs)/carpools',
+      title: '🚗 Plan Carpool',
+      subtitle: 'Share the journey',
+      icon: 'people' as const,
+      color: FlowColors.primary,
+      route: '/smart-carpool',
     },
     {
       id: '3',
@@ -68,9 +68,36 @@ export default function HomeScreen() {
   ];
 
   const stats = [
-    { label: 'Trips Taken', value: '12', icon: 'car-sport' as const },
-    { label: 'Money Saved', value: '₹2,400', icon: 'wallet' as const },
-    { label: 'CO₂ Reduced', value: '45kg', icon: 'leaf' as const },
+    { label: 'Active Rides', value: '3', icon: 'car-sport' as const, trend: '+2 today' },
+    { label: 'Money Saved', value: '₹2,400', icon: 'wallet' as const, trend: '₹150 this week' },
+    { label: 'CO₂ Reduced', value: '45kg', icon: 'leaf' as const, trend: '12% vs last month' },
+  ];
+
+  const recentActivities = [
+    {
+      id: '1',
+      title: 'Trip to Connaught Place completed',
+      subtitle: 'Saved ₹120 • 3 co-riders',
+      time: '2 hours ago',
+      icon: 'checkmark-circle' as const,
+      iconColor: '#10b981',
+    },
+    {
+      id: '2', 
+      title: 'Matched with carpool to Gurgaon',
+      subtitle: 'Pickup at 9:00 AM • ₹80 per person',
+      time: '4 hours ago',
+      icon: 'people' as const,
+      iconColor: FlowColors.primary,
+    },
+    {
+      id: '3',
+      title: 'New ride request posted',
+      subtitle: 'Sector 18 to Airport • Tomorrow 6 PM',
+      time: '1 day ago',
+      icon: 'add-circle' as const,
+      iconColor: '#f59e0b',
+    },
   ];
 
   const handleQuickAction = (route: string) => {
@@ -117,6 +144,7 @@ export default function HomeScreen() {
                   </View>
                   <Text style={styles.statValue}>{stat.value}</Text>
                   <Text style={styles.statLabel}>{stat.label}</Text>
+                  <Text style={styles.statTrend}>{stat.trend}</Text>
                 </GradientCard>
               ))}
             </View>
@@ -157,29 +185,20 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             
-            <GradientCard variant="glass" style={styles.activityCard}>
-              <View style={styles.activityContent}>
-                <View style={styles.activityIcon}>
-                  <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            {recentActivities.map((activity) => (
+              <GradientCard key={activity.id} variant="glass" style={styles.activityCard}>
+                <View style={styles.activityContent}>
+                  <View style={[styles.activityIcon, { backgroundColor: activity.iconColor + '20' }]}>
+                    <Ionicons name={activity.icon} size={20} color={activity.iconColor} />
+                  </View>
+                  <View style={styles.activityDetails}>
+                    <Text style={styles.activityTitle}>{activity.title}</Text>
+                    <Text style={styles.activitySubtitle}>{activity.subtitle}</Text>
+                    <Text style={styles.activityTime}>{activity.time}</Text>
+                  </View>
                 </View>
-                <View style={styles.activityDetails}>
-                  <Text style={styles.activityTitle}>Trip to Sector 18 completed</Text>
-                  <Text style={styles.activityTime}>2 hours ago</Text>
-                </View>
-              </View>
-            </GradientCard>
-
-            <GradientCard variant="glass" style={styles.activityCard}>
-              <View style={styles.activityContent}>
-                <View style={styles.activityIcon}>
-                  <Ionicons name="add-circle" size={20} color={FlowColors.primary} />
-                </View>
-                <View style={styles.activityDetails}>
-                  <Text style={styles.activityTitle}>New carpool created</Text>
-                  <Text style={styles.activityTime}>1 day ago</Text>
-                </View>
-              </View>
-            </GradientCard>
+              </GradientCard>
+            ))}
           </View>
 
           {/* Bottom Spacing */}
@@ -279,6 +298,13 @@ const styles = StyleSheet.create({
     fontFamily: 'SpaceMono',
     textAlign: 'center',
   },
+  statTrend: {
+    fontSize: 10,
+    color: '#10b981',
+    fontFamily: 'SpaceMono',
+    textAlign: 'center',
+    marginTop: 2,
+  },
 
   // Quick Actions
   quickActionsContainer: {
@@ -356,6 +382,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activityIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 16,
   },
   activityDetails: {
@@ -366,6 +397,12 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontFamily: 'SpaceMono',
     fontWeight: '500',
+    marginBottom: 2,
+  },
+  activitySubtitle: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontFamily: 'SpaceMono',
     marginBottom: 4,
   },
   activityTime: {

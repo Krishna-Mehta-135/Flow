@@ -1,8 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, View } from 'react-native';
 import { FlowButton } from './FlowButton';
-import { FlowColors } from '@/constants/Colors';
 
 interface EmptyStateProps {
   title: string;

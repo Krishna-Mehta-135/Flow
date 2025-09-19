@@ -1,4 +1,6 @@
+import DelhiNCRLocationPicker from '@/components/DelhiNCRLocationPicker';
 import carpoolService, { CreateRideRequestData } from '@/services/carpoolService';
+import delhiNCRLocationService, { DelhiNCRLocation } from '@/services/delhiNCRLocationService';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,8 +20,6 @@ import {
   View,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import DelhiNCRLocationPicker from '@/components/DelhiNCRLocationPicker';
-import delhiNCRLocationService, { DelhiNCRLocation } from '@/services/delhiNCRLocationService';
 
 const { width, height } = Dimensions.get('window');
 
