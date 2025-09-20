@@ -1,6 +1,7 @@
 import MatchingScreen from '@/app/matching';
 import DelhiNCRLocationPicker from '@/components/DelhiNCRLocationPicker';
 import { FlowColors } from '@/constants/Colors';
+import { useAuth } from '@/contexts/AuthContext';
 import { DelhiNCRLocation } from '@/services/delhiNCRLocationService';
 import transportationService, { TransportationOption, TransportationResponse } from '@/services/transportationService';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,21 +10,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 type FlowStep = 'location' | 'transport-options' | 'matching' | 'completed';
 
 const IntegratedRideRequestScreen = () => {
   const router = useRouter();
+  const { isAuthenticated, user } = useAuth();
   const [currentStep, setCurrentStep] = useState<FlowStep>('location');
   
   // Location selection state
@@ -64,6 +66,15 @@ const IntegratedRideRequestScreen = () => {
       return;
     }
 
+    if (!isAuthenticated) {
+      Alert.alert('Authentication Required', 'Please log in to request transport options', [
+        { text: 'Login', onPress: () => router.push('/login') },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+      return;
+    }
+
+    console.log('Getting transport options for user:', user?.username);
     setIsLoading(true);
     try {
       const request = {

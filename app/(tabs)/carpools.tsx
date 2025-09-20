@@ -12,7 +12,6 @@ import {
     FlatList,
     Modal,
     RefreshControl,
-    SafeAreaView,
     StatusBar,
     StyleSheet,
     Text,
@@ -20,6 +19,7 @@ import {
     View,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -430,7 +430,7 @@ export default function CarpoolsScreen() {
             {/* Live Map Button */}
             <TouchableOpacity 
               style={styles.liveMapButton}
-              onPress={() => router.push('/live-carpool-map')}
+              onPress={() => router.push('/simple-carpool')}
             >
               <LinearGradient
                 colors={['#10b981', '#059669']}

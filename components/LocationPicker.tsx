@@ -1,19 +1,19 @@
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    StyleSheet,
-    View,
+  Alert,
+  Dimensions,
+  StyleSheet,
+  View,
 } from 'react-native';
 import {
-    Button,
-    IconButton,
-    Modal,
-    Portal,
-    Surface,
-    Text,
-    TextInput
+  Button,
+  IconButton,
+  Modal,
+  Portal,
+  Surface,
+  Text,
+  TextInput
 } from 'react-native-paper';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -81,9 +81,12 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       const addresses = await Location.reverseGeocodeAsync({
         latitude,
         longitude,
+      }).catch((error) => {
+        console.warn('Reverse geocoding failed:', error);
+        return []; // Return empty array as fallback
       });
 
-      const address = addresses[0]
+      const address = addresses && addresses[0]
         ? `${addresses[0].street || ''} ${addresses[0].city || ''} ${addresses[0].region || ''}`.trim()
         : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 

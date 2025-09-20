@@ -1,16 +1,19 @@
 import carpoolService, { RideRequest } from '@/services/carpoolService';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
-  FlatList,
-  RefreshControl,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    FlatList,
+    RefreshControl,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RequestsScreen() {
   const [requests, setRequests] = useState<RideRequest[]>([]);
@@ -120,14 +123,14 @@ export default function RequestsScreen() {
         <View style={styles.locationRow}>
           <Ionicons name="ellipse" size={12} color="#34C759" />
           <Text style={styles.locationText}>
-            {item.startLocation.address || `${item.startLocation.latitude}, ${item.startLocation.longitude}`}
+            {item.startLocation?.address || `${item.startLocation?.latitude || 'N/A'}, ${item.startLocation?.longitude || 'N/A'}`}
           </Text>
         </View>
         <View style={styles.routeLine} />
         <View style={styles.locationRow}>
           <Ionicons name="ellipse" size={12} color="#FF3B30" />
           <Text style={styles.locationText}>
-            {item.endLocation.address || `${item.endLocation.latitude}, ${item.endLocation.longitude}`}
+            {item.endLocation?.address || `${item.endLocation?.latitude || 'N/A'}, ${item.endLocation?.longitude || 'N/A'}`}
           </Text>
         </View>
       </View>
@@ -150,7 +153,12 @@ export default function RequestsScreen() {
           style={styles.cancelButton}
           onPress={() => handleCancelRequest(item._id)}
         >
-          <Text style={styles.cancelButtonText}>Cancel Request</Text>
+          <LinearGradient
+            colors={['#ef4444', '#dc2626']}
+            style={styles.cancelButtonGradient}
+          >
+            <Text style={styles.cancelButtonText}>Cancel Request</Text>
+          </LinearGradient>
         </TouchableOpacity>
       )}
 
@@ -165,19 +173,25 @@ export default function RequestsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#111c22" />
         <View style={styles.loadingContainer}>
-          <Text>Loading requests...</Text>
+          <Text style={styles.loadingText}>Loading requests...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My Ride Requests</Text>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#111c22" />
+      
+      {/* Header */}
+      <SafeAreaView style={styles.header}>
+        <BlurView intensity={80} style={styles.headerContent}>
+          <Text style={styles.title}>My Ride Requests</Text>
+        </BlurView>
+      </SafeAreaView>
 
       {requests.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -199,30 +213,37 @@ export default function RequestsScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0a0e13',
   },
   header: {
-    backgroundColor: '#fff',
-    padding: 24,
+    backgroundColor: '#111c22',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1e293b',
+  },
+  headerContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 15,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '800',
+    color: 'white',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    color: '#94a3b8',
+    fontSize: 16,
   },
   emptyContainer: {
     flex: 1,
@@ -233,31 +254,25 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#333',
+    color: 'white',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 16,
-    color: '#666',
+    color: '#94a3b8',
     textAlign: 'center',
   },
   listContainer: {
     padding: 16,
   },
   requestCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   requestHeader: {
     flexDirection: 'row',
@@ -268,6 +283,10 @@ const styles = StyleSheet.create({
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   status: {
     fontSize: 12,
@@ -276,7 +295,7 @@ const styles = StyleSheet.create({
   },
   requestDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#94a3b8',
   },
   locationContainer: {
     marginBottom: 16,
@@ -288,14 +307,14 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    color: '#333',
+    color: '#e2e8f0',
     marginLeft: 8,
     flex: 1,
   },
   routeLine: {
     width: 2,
     height: 20,
-    backgroundColor: '#ddd',
+    backgroundColor: '#475569',
     marginLeft: 5,
     marginBottom: 8,
   },
@@ -309,31 +328,36 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 14,
-    color: '#666',
+    color: '#94a3b8',
     marginLeft: 8,
   },
   cancelButton: {
-    backgroundColor: '#FF3B30',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  cancelButtonGradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
+    color: 'white',
   },
   matchedInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f9f0',
+    backgroundColor: 'rgba(52, 199, 89, 0.1)',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(52, 199, 89, 0.2)',
   },
   matchedText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#34C759',
+    color: '#10b981',
     marginLeft: 8,
   },
 });

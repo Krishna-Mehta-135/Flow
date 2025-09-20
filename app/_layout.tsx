@@ -28,6 +28,10 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="register" options={{ headerShown: false }} />
+            <Stack.Screen name="traffic-predictor" options={{ headerShown: false }} />
+            <Stack.Screen name="integrated-ride-request" options={{ headerShown: false }} />
+            <Stack.Screen name="live-map-redirect" options={{ headerShown: false }} />
+            <Stack.Screen name="smart-carpool" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />

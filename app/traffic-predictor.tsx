@@ -1,5 +1,6 @@
 import MLRoutePicker from '@/components/MLRoutePicker';
 import { FlowColors } from '@/constants/Colors';
+import { useAuth } from '@/contexts/AuthContext';
 import { MLSupportedRoute } from '@/services/mlSupportedRoutes';
 import transportationService, { TransportationOption } from '@/services/transportationService';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,6 +47,7 @@ interface TrafficPrediction {
 
 const FutureTrafficScreen = () => {
   const router = useRouter();
+  const { isAuthenticated, user } = useAuth();
   
   // Route state - using ML supported routes
   const [selectedRoute, setSelectedRoute] = useState<MLSupportedRoute | null>(null);
@@ -106,6 +108,15 @@ const FutureTrafficScreen = () => {
       return;
     }
 
+    if (!isAuthenticated) {
+      Alert.alert('Authentication Required', 'Please log in to get traffic predictions', [
+        { text: 'Login', onPress: () => router.push('/login') },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+      return;
+    }
+
+    console.log('Getting prediction for authenticated user:', user?.username);
     setIsLoading(true);
     try {
       const request = {
@@ -126,6 +137,43 @@ const FutureTrafficScreen = () => {
       const currentOption = response.options.find(opt => opt.type === 'taxi');
       
       if (currentOption) {
+        // Use ML prediction data if available
+        const mlData = currentOption.mlInsights;
+        let trafficLevel: 'low' | 'medium' | 'high' = 'medium';
+        let confidence = 70;
+        let shouldLeaveNow = true;
+        let recommendationReason = '';
+
+        if (mlData && mlData.prediction) {
+          // Extract confidence from ML insights (assuming it's stored there)
+          const predictionConfidence = (currentOption.confidence || 0.5) * 100;
+          confidence = Math.round(predictionConfidence);
+          
+          // Determine if user should leave based on traffic level and confidence
+          if (currentOption.trafficLevel === 'low' && confidence > 50) {
+            shouldLeaveNow = true;
+            recommendationReason = `Great time to travel! ML predicts ${currentOption.trafficLevel} traffic with ${confidence}% confidence. You should go now!`;
+            trafficLevel = 'low';
+          } else if (currentOption.trafficLevel === 'high' && confidence > 50) {
+            shouldLeaveNow = false;
+            recommendationReason = `Heavy traffic predicted with ${confidence}% confidence. Consider waiting for a better time or choosing an alternative route.`;
+            trafficLevel = 'high';
+          } else {
+            shouldLeaveNow = confidence > 70; // If confidence is high, trust the prediction
+            recommendationReason = `ML predicts ${currentOption.trafficLevel} traffic with ${confidence}% confidence. ${shouldLeaveNow ? 'You can proceed.' : 'Consider waiting for better conditions.'}`;
+            trafficLevel = currentOption.trafficLevel;
+          }
+        } else {
+          // Fallback to time-based prediction
+          const currentHour = new Date().getHours();
+          const isRushHour = (currentHour >= 7 && currentHour <= 10) || (currentHour >= 17 && currentHour <= 21);
+          trafficLevel = isRushHour ? 'high' : 'medium';
+          shouldLeaveNow = !isRushHour;
+          recommendationReason = isRushHour 
+            ? 'Rush hour detected. Consider waiting for lighter traffic.'
+            : 'Good time to travel! Traffic should be manageable.';
+        }
+
         const futureSlots = generateFutureSlots(currentOption);
         
         // Find best time (lowest traffic)
@@ -133,24 +181,19 @@ const FutureTrafficScreen = () => {
           current.duration < best.duration ? current : best
         );
         
-        const currentHour = new Date().getHours();
-        const isRushHour = (currentHour >= 7 && currentHour <= 10) || (currentHour >= 17 && currentHour <= 21);
-        
         const predictionResult: TrafficPrediction = {
           route: selectedRoute,
           departureTime: selectedDate.toLocaleString(),
           currentTraffic: {
-            level: isRushHour ? 'high' : 'medium',
+            level: trafficLevel,
             duration: currentOption.estimatedTime,
-            confidence: Math.round(Math.random() * 15 + 80), // 80-95%
+            confidence: confidence,
           },
           futureSlots,
           recommendation: {
-            shouldLeaveNow: !isRushHour,
+            shouldLeaveNow: shouldLeaveNow,
             bestTime: bestSlot.time,
-            reason: isRushHour 
-              ? `Heavy traffic expected. Consider leaving at ${bestSlot.time} to save ${Math.abs(bestSlot.duration - currentOption.estimatedTime)} minutes.`
-              : `Good time to travel! Traffic is currently light.`,
+            reason: recommendationReason,
             potentialSavings: Math.abs(bestSlot.duration - currentOption.estimatedTime),
           },
         };
@@ -194,7 +237,7 @@ const FutureTrafficScreen = () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>🔮 Future Traffic</Text>
+          <Text style={styles.headerTitle}>Traffic Predictor</Text>
           <View style={styles.headerSpacer} />
         </View>
 

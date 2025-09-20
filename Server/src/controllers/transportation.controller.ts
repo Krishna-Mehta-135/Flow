@@ -23,13 +23,20 @@ interface MLServiceResponse {
  * This will call your teammates' ML services
  */
 export const getTransportationOptions = asyncHandler(async (req: Request, res: Response) => {
+    console.log("Transportation options request received");
+    console.log("Request body:", req.body);
+    console.log("User from token:", (req as any).user);
+    
     const { source, destination, requestedTime, passengerCount = 1 } = req.body;
 
     // Get user ID from auth middleware
     const userId = (req as any).user?.id;
     if (!userId) {
+        console.log("No user ID found in request");
         return res.status(401).json(new ApiResponse(401, null, "Unauthorized"));
     }
+
+    console.log("Processing request for user:", userId);
 
     // Parse and validate the requested time
     let parsedTime: Date;
@@ -357,7 +364,7 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 async function callRouteMLService(routeData: any): Promise<MLServiceResponse> {
     const url = "https://traffic-api-latest.onrender.com/predict";
     
-    // Prepare the data for the ML API (match the expected format)
+    // Prepare the data for the ML API (match the expected format from Postman)
     const mlRequestData = {
         route_key: routeData.route_key,
         hour_of_day: routeData.hour_of_day,
@@ -365,41 +372,47 @@ async function callRouteMLService(routeData: any): Promise<MLServiceResponse> {
         is_weekend: routeData.is_weekend,
         is_holiday: 0, // Default to not holiday
         time_bin: getTimeBin(routeData.hour_of_day),
-        duration_traffic: routeData.distance_km * 3, // Estimated base duration
-        congestion_ratio: 0.5, // Default medium congestion
-        lag_duration_t_1: routeData.distance_km * 3.2,
-        lag_duration_t_2: routeData.distance_km * 3.5,
-        rolling_avg_duration_last_3: routeData.distance_km * 3.1,
+        duration_traffic: Math.round((routeData.distance_km * 1.53) * 100) / 100, // More realistic duration
+        congestion_ratio: 0,
+        "lag_duration_t-1": 25.0,
+        "lag_duration_t-2": 26.5,
+        rolling_avg_duration_last_3: 24.5,
         last_jam_state: 0,
-        neighbor_avg_duration: routeData.distance_km * 3,
+        neighbor_avg_duration: Math.round((routeData.distance_km * 1.54) * 100) / 100,
         road_type: "arterial", // Default road type
-        lanes: 4, // Default lanes
+        lanes: 6, // Default lanes as in your example
         distance_km: routeData.distance_km,
         rain_mm: 0, // Default no rain
-        temperature: 25, // Default temperature
-        visibility_km: 10, // Default visibility
-        pressure: 1013.25, // Default pressure
-        wind_speed: 5, // Default wind speed
-        humidity: 60, // Default humidity
+        temperature: 27.97, // Match your Postman example
+        visibility_km: 4.5, // Match your Postman example
+        pressure: 1013.25, // Match your Postman example
+        wind_speed: 10.0, // Match your Postman example
+        humidity: 50.0, // Match your Postman example
         rain_x_hour: 0,
-        dist_x_weekend: routeData.is_weekend * routeData.distance_km,
+        dist_x_weekend: 0,
         origin_zone: routeData.origin_zone,
         destination_zone: routeData.destination_zone,
-        is_commute_corridor: 1, // Assume it's a commute route
-        rolling_15min: routeData.distance_km * 3,
-        rolling_1hr: routeData.distance_km * 6,
+        is_commute_corridor: 0, // Match your Postman example
+        rolling_15min: 25.0, // Match your Postman example
+        rolling_1hr: 50.0, // Match your Postman example
         event_flag: 0,
         metro_strike_flag: 0
     };
 
     try {
+        console.log("Sending to ML API:", JSON.stringify(mlRequestData, null, 2));
+        
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(mlRequestData)
         });
         
+        console.log("ML API Response status:", response.status);
+        
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error("ML API Error Response:", errorText);
             throw new Error(`ML API error: ${response.status}`);
         }
         

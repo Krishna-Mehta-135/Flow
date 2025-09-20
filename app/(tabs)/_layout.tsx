@@ -70,7 +70,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="carpools"
         options={{
-          title: 'Carpools',
+          title: 'My Rides',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               size={focused ? 30 : 28} 
@@ -104,6 +104,13 @@ export default function TabLayout() {
               color={color} 
             />
           ),
+        }}
+      />
+      {/* Hide explore tab */}
+      <Tabs.Screen
+        name="explore"
+        options={{
+          href: null, // This hides the tab
         }}
       />
     </Tabs>

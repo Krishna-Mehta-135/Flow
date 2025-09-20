@@ -9,14 +9,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -47,7 +47,7 @@ export default function HomeScreen() {
       subtitle: 'Share the journey',
       icon: 'people' as const,
       color: FlowColors.primary,
-      route: '/smart-carpool',
+      route: '/simple-carpool',
     },
     {
       id: '3',

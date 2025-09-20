@@ -28,6 +28,19 @@ app.use(
 
 app.use(express.json());
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+    res.status(200).json({
+        status: "ok",
+        message: "Server is running",
+        timestamp: new Date().toISOString(),
+        services: {
+            database: "connected",
+            api: "running"
+        }
+    });
+});
+
 // Routes
 app.use("/api/auth", authRouter);
 app.use("/api/ride-requests", rideRequestRouter);

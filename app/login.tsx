@@ -4,16 +4,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,11 +24,17 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
 
-  const handleLogin = async () => {
+  const validateForm = () => {
     if (!credential.trim() || !password.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const handleLogin = async () => {
+    if (!validateForm()) return;
 
     try {
       setIsLoading(true);
@@ -73,7 +79,7 @@ export default function LoginScreen() {
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
               <Text style={styles.title}>Welcome Back</Text>
-              <Text style={styles.subtitle}>Sign in to continue your journey</Text>
+              <Text style={styles.subtitle}>Sign in to your account</Text>
             </View>
 
             {/* Form */}
@@ -81,7 +87,7 @@ export default function LoginScreen() {
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Email or Username</Text>
                 <TextInput
-                  style={[styles.input, !credential.trim() && styles.inputError]}
+                  style={styles.input}
                   value={credential}
                   onChangeText={setCredential}
                   placeholder="Enter your email or username"
@@ -97,7 +103,7 @@ export default function LoginScreen() {
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordContainer}>
                   <TextInput
-                    style={[styles.passwordInput, !password.trim() && styles.inputError]}
+                    style={styles.passwordInput}
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Enter your password"
@@ -134,14 +140,6 @@ export default function LoginScreen() {
                   <Text style={styles.loginButtonText}>Sign In</Text>
                 )}
               </TouchableOpacity>
-
-              {/* Forgot Password */}
-              <TouchableOpacity
-                style={styles.forgotPasswordButton}
-                disabled={isLoading}
-              >
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Bottom Section */}
@@ -158,7 +156,7 @@ export default function LoginScreen() {
                   onPress={navigateToRegister} 
                   disabled={isLoading}
                 >
-                  <Text style={styles.registerLink}>Sign Up</Text>
+                  <Text style={styles.registerLink}>Create Account</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -223,7 +221,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    gap: 24,
+    gap: 20,
   },
   inputContainer: {
     gap: 8,
@@ -267,16 +265,13 @@ const styles = StyleSheet.create({
   eyeButtonText: {
     fontSize: 18,
   },
-  inputError: {
-    borderColor: '#f87171',
-  },
   loginButton: {
     height: 56,
     backgroundColor: FlowColors.primary,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -295,17 +290,8 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontFamily: 'SpaceMono',
   },
-  forgotPasswordButton: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    color: FlowColors.primary,
-    fontFamily: 'SpaceMono',
-  },
   bottomSection: {
-    marginTop: 40,
+    marginTop: 32,
     gap: 24,
   },
   divider: {

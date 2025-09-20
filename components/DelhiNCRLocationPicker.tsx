@@ -4,14 +4,14 @@ import { BlurView } from 'expo-blur';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import {
-    FlatList,
-    Modal,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  FlatList,
+  Modal,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface LocationData {
@@ -69,9 +69,12 @@ export default function DelhiNCRLocationPicker({
         const addresses = await Location.reverseGeocodeAsync({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
+        }).catch((error) => {
+          console.warn('Reverse geocoding failed:', error);
+          return []; // Return empty array as fallback
         });
 
-        const address = addresses[0]
+        const address = addresses && addresses[0]
           ? `${addresses[0].street || ''} ${addresses[0].city || ''} ${addresses[0].region || ''}`.trim()
           : `${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`;
 
