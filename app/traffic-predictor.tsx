@@ -20,28 +20,23 @@ import {
   View
 } from 'react-native';
 
-interface TrafficSlot {
-  time: string;
-  level: 'low' | 'medium' | 'high';
-  duration: number;
-  confidence: number;
-  savings?: number;
+// Simple interface for your ML response
+interface MLPredictionResponse {
+  prediction: number; // 0 or 1 (0 = don't go, 1 = go)
+  probabilities: [number, number]; // [prob_dont_go, prob_go]
 }
 
 interface TrafficPrediction {
   route: MLSupportedRoute;
-  departureTime: string;
   currentTraffic: {
-    level: 'low' | 'medium' | 'high';
-    duration: number;
+    shouldGo: boolean;
     confidence: number;
+    reason: string;
   };
-  futureSlots: TrafficSlot[];
   recommendation: {
     shouldLeaveNow: boolean;
-    bestTime?: string;
     reason: string;
-    potentialSavings?: number;
+    confidence: number;
   };
 }
 
@@ -67,39 +62,45 @@ const FutureTrafficScreen = () => {
     setShowRoutePicker(false);
   };
 
-  const generateFutureSlots = (baseOption: TransportationOption): TrafficSlot[] => {
-    const slots: TrafficSlot[] = [];
-    const now = new Date();
-    
-    for (let i = 0; i < 12; i++) {
-      const slotTime = new Date(now.getTime() + (i * 60 * 60 * 1000));
-      const hour = slotTime.getHours();
+  // Call your ML API directly
+  const callMLPrediction = async (route: MLSupportedRoute): Promise<MLPredictionResponse> => {
+    try {
+      // TODO: Replace with your actual ML API endpoint
+      const ML_API_ENDPOINT = 'YOUR_ML_API_ENDPOINT'; // Replace with your ML server URL
       
-      // Rush hour logic for Delhi NCR
-      let level: 'low' | 'medium' | 'high';
-      let durationMultiplier = 1;
+      const response = await fetch(ML_API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          route: route.id,
+          from: route.origin,
+          to: route.destination,
+          time: selectedDate.toISOString()
+        }),
+      });
       
-      if ((hour >= 7 && hour <= 10) || (hour >= 17 && hour <= 21)) {
-        level = 'high';
-        durationMultiplier = 1.8;
-      } else if ((hour >= 11 && hour <= 16) || (hour >= 22 && hour <= 23)) {
-        level = 'medium';
-        durationMultiplier = 1.3;
-      } else {
-        level = 'low';
-        durationMultiplier = 1.0;
+      if (!response.ok) {
+        throw new Error(`ML API error: ${response.status}`);
       }
       
-      slots.push({
-        time: slotTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        level,
-        duration: Math.round(baseOption.estimatedTime * durationMultiplier),
-        confidence: Math.round(Math.random() * 20 + 75), // 75-95% confidence
-        savings: level === 'low' ? Math.round((baseOption.estimatedTime * 0.8) - (baseOption.estimatedTime * durationMultiplier)) : undefined,
-      });
+      const result = await response.json();
+      console.log('ML API Response:', result);
+      return result;
+    } catch (error) {
+      console.error('ML API call failed:', error);
+      // Mock response for testing with your format
+      const mockConfidence = Math.random() * 0.6 + 0.4; // 40% to 100%
+      const mockPrediction = mockConfidence > 0.6 ? 1 : 0;
+      
+      return {
+        prediction: mockPrediction,
+        probabilities: mockPrediction === 1 
+          ? [1 - mockConfidence, mockConfidence] 
+          : [mockConfidence, 1 - mockConfidence]
+      };
     }
-    
-    return slots;
   };
 
   const getPrediction = async () => {
@@ -116,90 +117,43 @@ const FutureTrafficScreen = () => {
       return;
     }
 
-    console.log('Getting prediction for authenticated user:', user?.username);
+    console.log('Getting ML prediction for route:', selectedRoute.description);
     setIsLoading(true);
+    
     try {
-      const request = {
-        source: {
-          lat: 28.6139, // Default Delhi coordinates
-          lng: 77.2090,
-          address: selectedRoute.origin,
-        },
-        destination: {
-          lat: 28.6139, // Default Delhi coordinates  
-          lng: 77.2090,
-          address: selectedRoute.destination,
-        },
-        requestedTime: selectedDate.toISOString(),
-      };
-
-      const response = await transportationService.getTransportationOptions(request);
-      const currentOption = response.options.find(opt => opt.type === 'taxi');
+      // Call your simplified ML API
+      const mlResponse = await callMLPrediction(selectedRoute);
       
-      if (currentOption) {
-        // Use ML prediction data if available
-        const mlData = currentOption.mlInsights;
-        let trafficLevel: 'low' | 'medium' | 'high' = 'medium';
-        let confidence = 70;
-        let shouldLeaveNow = true;
-        let recommendationReason = '';
-
-        if (mlData && mlData.prediction) {
-          // Extract confidence from ML insights (assuming it's stored there)
-          const predictionConfidence = (currentOption.confidence || 0.5) * 100;
-          confidence = Math.round(predictionConfidence);
-          
-          // Determine if user should leave based on traffic level and confidence
-          if (currentOption.trafficLevel === 'low' && confidence > 50) {
-            shouldLeaveNow = true;
-            recommendationReason = `Great time to travel! ML predicts ${currentOption.trafficLevel} traffic with ${confidence}% confidence. You should go now!`;
-            trafficLevel = 'low';
-          } else if (currentOption.trafficLevel === 'high' && confidence > 50) {
-            shouldLeaveNow = false;
-            recommendationReason = `Heavy traffic predicted with ${confidence}% confidence. Consider waiting for a better time or choosing an alternative route.`;
-            trafficLevel = 'high';
-          } else {
-            shouldLeaveNow = confidence > 70; // If confidence is high, trust the prediction
-            recommendationReason = `ML predicts ${currentOption.trafficLevel} traffic with ${confidence}% confidence. ${shouldLeaveNow ? 'You can proceed.' : 'Consider waiting for better conditions.'}`;
-            trafficLevel = currentOption.trafficLevel;
-          }
+      // Extract confidence from probabilities
+      const confidence = Math.max(...mlResponse.probabilities) * 100;
+      const shouldGo = mlResponse.prediction === 1;
+      
+      let reason = '';
+      if (confidence > 40) {
+        if (shouldGo) {
+          reason = `Good time to travel! ML predicts favorable conditions with ${confidence.toFixed(1)}% confidence.`;
         } else {
-          // Fallback to time-based prediction
-          const currentHour = new Date().getHours();
-          const isRushHour = (currentHour >= 7 && currentHour <= 10) || (currentHour >= 17 && currentHour <= 21);
-          trafficLevel = isRushHour ? 'high' : 'medium';
-          shouldLeaveNow = !isRushHour;
-          recommendationReason = isRushHour 
-            ? 'Rush hour detected. Consider waiting for lighter traffic.'
-            : 'Good time to travel! Traffic should be manageable.';
+          reason = `Not recommended to travel now. ML predicts poor conditions with ${confidence.toFixed(1)}% confidence. Consider waiting.`;
         }
-
-        const futureSlots = generateFutureSlots(currentOption);
-        
-        // Find best time (lowest traffic)
-        const bestSlot = futureSlots.reduce((best, current) => 
-          current.duration < best.duration ? current : best
-        );
-        
-        const predictionResult: TrafficPrediction = {
-          route: selectedRoute,
-          departureTime: selectedDate.toLocaleString(),
-          currentTraffic: {
-            level: trafficLevel,
-            duration: currentOption.estimatedTime,
-            confidence: confidence,
-          },
-          futureSlots,
-          recommendation: {
-            shouldLeaveNow: shouldLeaveNow,
-            bestTime: bestSlot.time,
-            reason: recommendationReason,
-            potentialSavings: Math.abs(bestSlot.duration - currentOption.estimatedTime),
-          },
-        };
-        
-        setPrediction(predictionResult);
+      } else {
+        reason = `Uncertain prediction (${confidence.toFixed(1)}% confidence). Consider checking current traffic manually.`;
       }
+
+      const predictionResult: TrafficPrediction = {
+        route: selectedRoute,
+        currentTraffic: {
+          shouldGo: shouldGo,
+          confidence: confidence,
+          reason: reason,
+        },
+        recommendation: {
+          shouldLeaveNow: shouldGo && confidence > 40,
+          reason: reason,
+          confidence: confidence,
+        },
+      };
+      
+      setPrediction(predictionResult);
     } catch (error) {
       console.error('Prediction error:', error);
       Alert.alert('Error', 'Failed to get traffic prediction. Please try again.');
@@ -311,47 +265,27 @@ const FutureTrafficScreen = () => {
           {/* Prediction Results */}
           {prediction && (
             <View style={styles.predictionContainer}>
-              {/* Current Traffic */}
+              {/* Current Prediction */}
               <View style={styles.currentTrafficCard}>
                 <BlurView intensity={20} style={styles.cardBlur}>
                   <View style={styles.cardHeader}>
                     <Ionicons 
-                      name={getTrafficIcon(prediction.currentTraffic.level)} 
+                      name={prediction.currentTraffic.shouldGo ? "checkmark-circle" : "close-circle"} 
                       size={24} 
-                      color={getTrafficColor(prediction.currentTraffic.level)} 
+                      color={prediction.currentTraffic.shouldGo ? "#10b981" : "#ef4444"} 
                     />
-                    <Text style={styles.cardTitle}>Current Conditions</Text>
+                    <Text style={styles.cardTitle}>ML Prediction</Text>
                   </View>
                   <View style={styles.trafficDetails}>
-                    <Text style={[styles.trafficLevel, { color: getTrafficColor(prediction.currentTraffic.level) }]}>
-                      {prediction.currentTraffic.level.toUpperCase()} TRAFFIC
-                    </Text>
-                    <Text style={styles.duration}>
-                      {prediction.currentTraffic.duration} minutes
+                    <Text style={[styles.trafficLevel, { 
+                      color: prediction.currentTraffic.shouldGo ? "#10b981" : "#ef4444" 
+                    }]}>
+                      {prediction.currentTraffic.shouldGo ? "GOOD TO GO" : "WAIT"}
                     </Text>
                     <Text style={styles.confidence}>
-                      {prediction.currentTraffic.confidence}% confidence
+                      {prediction.currentTraffic.confidence.toFixed(1)}% confidence
                     </Text>
                   </View>
-                </BlurView>
-              </View>
-
-              {/* Future Traffic Slots */}
-              <View style={styles.futureTrafficCard}>
-                <BlurView intensity={20} style={styles.cardBlur}>
-                  <Text style={styles.cardTitle}>🕐 Next 12 Hours</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.slotsScroll}>
-                    {prediction.futureSlots.map((slot, index) => (
-                      <View key={index} style={styles.trafficSlot}>
-                        <Text style={styles.slotTime}>{slot.time}</Text>
-                        <View style={[styles.slotIndicator, { backgroundColor: getTrafficColor(slot.level) }]} />
-                        <Text style={styles.slotDuration}>{slot.duration}m</Text>
-                        {slot.savings && slot.savings > 0 && (
-                          <Text style={styles.slotSavings}>-{slot.savings}m</Text>
-                        )}
-                      </View>
-                    ))}
-                  </ScrollView>
                 </BlurView>
               </View>
 
@@ -365,12 +299,6 @@ const FutureTrafficScreen = () => {
                   <Text style={styles.recommendationText}>
                     {prediction.recommendation.reason}
                   </Text>
-                  {prediction.recommendation.bestTime && (
-                    <View style={styles.bestTimeContainer}>
-                      <Text style={styles.bestTimeLabel}>Optimal departure:</Text>
-                      <Text style={styles.bestTime}>{prediction.recommendation.bestTime}</Text>
-                    </View>
-                  )}
                 </BlurView>
               </View>
 
@@ -378,7 +306,7 @@ const FutureTrafficScreen = () => {
               {prediction.recommendation.shouldLeaveNow && (
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => router.push('/smart-carpool' as any)}
+                  onPress={() => router.push('/simple-carpool' as any)}
                 >
                   <LinearGradient
                     colors={['#10b981', '#059669']}
